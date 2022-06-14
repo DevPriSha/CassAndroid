@@ -84,7 +84,7 @@ class MyClient(discord.Client):
 def main():
     # DialoGPT-medium-joshua is my model name
     client = MyClient()
-    client.run('OTc5Njk0MTYzMzEyMzk0Mjgw.Go2ynL.A6oFBzV3topn9efMy1ABbmqP0yncc0pr0Ogwz0')
+    client.run('YOUR_TOKEN_HERE')
 
 if __name__ == '__main__':
   main()
