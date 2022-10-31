@@ -8,33 +8,14 @@ tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-large')
 model = AutoModelWithLMHead.from_pretrained('cass-large-four')
 
 chat_history_ids = None
-
-df = pd.read_csv('history.csv')
-#create a dictionary with id as key and its frequency as value
-id_dict = {}
-for i in df['id']:
-    if i in id_dict:
-        id_dict[i] += 1
-    else:
-        id_dict[i] = 1
-
+step = 0
 
 class MyClient(discord.Client):
     def __init__(self):
         super().__init__()
 
     def query(self, msg, id):
-        global id_dict
-        global chat_history_ids
-        if id not in id_dict:
-            id_dict[id] = 0
-            step = 0
-        elif id_dict[id] == 2:
-            id_dict[id] = 0
-            step = 0
-        else:
-            id_dict[id] += 1
-            step = id_dict[id]
+        global step
         # encode the new user input, add the eos_token and return a tensor in Pytorch
         new_user_input_ids = tokenizer.encode(msg + tokenizer.eos_token, return_tensors='pt')
         bot_input_ids = torch.cat([chat_history_ids, new_user_input_ids], dim=-1) if step > 0 else new_user_input_ids
@@ -52,7 +33,12 @@ class MyClient(discord.Client):
         )
     
     # pretty print last ouput tokens from bot
-        return tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+        bot_response = tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+        step += 1
+        # if bot_response is not alphabet
+        if not bot_response.isalpha():
+            step = 0
+        return bot_response
 
     async def on_ready(self):
         # print out information when the bot wakes up
@@ -76,10 +62,6 @@ class MyClient(discord.Client):
             return
         # form query payload with the content of the message
         print(message.content)
-        #add message.author.id and message.content to a csv file
-        df = pd.read_csv('history.csv')
-        df = df.concat({'id': message.author.id, 'message': message.content}, ignore_index=True)
-        df.to_csv('history.csv', index=False)
 
         # while the bot is waiting on a response from the model
         # set the its status as typing for user-friendliness
